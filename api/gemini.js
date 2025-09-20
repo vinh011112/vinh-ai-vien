@@ -1,3 +1,5 @@
+// api/gemini.js — Bản tối giản: chỉ gọi endpoint phổ quát imagegeneration:generate
+
 async function readErr(res) {
   try {
     const j = await res.clone().json();
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: text,
-        size: '1024x1024',
+        size: '1024x1024',           // có thể đổi: 512x512, 768x768...
         safetyFilterLevel: 'block_most'
       })
     });
