@@ -20,3 +20,8 @@
     "vite": "^6.2.0"
   }
 }
+{
+  "devDependencies": {
+    "@vercel/node": "^3.2.20"
+  }
+}
