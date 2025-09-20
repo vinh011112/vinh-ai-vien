@@ -1,20 +1,15 @@
-// src/services/geminiService.ts
 export async function generateImage(
-  imageFile: { base64: string } | null,
-  prompt: string,
-  opts?: { mode?: "edit" | "generate" }
+  _imageFile: { base64: string } | null,
+  prompt: string
 ) {
-  const mode = opts?.mode ?? (imageFile ? "edit" : "generate");
-
-  const res = await fetch("/api/gemini", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      imageBase64: imageFile?.base64 ?? null,
-      mode,
-    }),
+  const res = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }) // chỉ gửi text
   });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t || 'Provider error');
+  }
   return await res.json(); // { imageBase64 }
 }
