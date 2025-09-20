@@ -1,3 +1,4 @@
+// src/services/geminiService.ts
 export async function generateImage(imageFile: { base64: string }, prompt: string) {
   const res = await fetch('/api/gemini', {
     method: 'POST',
