@@ -1,3 +1,4 @@
+// src/services/geminiService.ts
 export async function generateImage(
   _imageFile: { base64: string } | null,
   prompt: string
