@@ -1,21 +1,9 @@
-// src/services/geminiService.ts
-import type { ImageFile, EditResult } from "../types";
-
-/**
- * Stub đơn giản để build qua.
- * Sau này bạn thay bằng gọi API thật (Vercel Function / Gemini API).
- */
-export async function generateImage(
-  imageFile: ImageFile,
-  prompt: string
-): Promise<EditResult> {
-  // Giả lập chờ API
-  await new Promise((r) => setTimeout(r, 500));
-
-  // Trả về "kết quả" dùng ngay ảnh gốc (để app chạy được)
-  return {
-    editedImageBase64: imageFile?.base64 ?? null,
-    meta: { prompt },
-  } as unknown as EditResult;
+export async function generateImage(imageFile: { base64: string }, prompt: string) {
+  const r = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, imageBase64: imageFile.base64 }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return await r.json(); // { imageBase64, meta }
 }
-
