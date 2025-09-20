@@ -5,7 +5,7 @@ import { FeatureButton } from './FeatureButton';
 import { FEATURE_PROMPTS, RANDOM_SUGGESTIONS } from '../constants';
 
 interface ControlPanelProps {
-  onImageUpload: (file: { name: string; type: string; base64: string; } | null) => void;
+ onImageUpload({ base64, name: f.name, size: f.size });
   prompt: string;
   onPromptChange: (prompt: string) => void;
   onGenerate: () => void;
