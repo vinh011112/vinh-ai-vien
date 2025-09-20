@@ -27,3 +27,8 @@
     "noEmit": true
   }
 }
+{
+  "compilerOptions": {
+    "types": ["@vercel/node"]
+  }
+}
