@@ -2,8 +2,8 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const API_KEY = process.env.AI_API_KEY;
-  if (!API_KEY) return res.status(500).json({ error: "Missing AI_API_KEY on server" });
+  const TOKEN = process.env.HF_TOKEN;
+  if (!TOKEN) return res.status(500).json({ error: "Missing HF_TOKEN on server" });
 
   try {
     const body = await (async () => {
@@ -15,53 +15,28 @@ export default async function handler(req, res) {
     })();
 
     const prompt = body?.prompt || "A high-quality photo of a tropical beach at sunset";
-    const url1 = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict";
-    const r1 = await fetch(url1, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": API_KEY },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1 }
-      })
-    });
 
-    if (r1.ok) {
-      const j = await r1.json();
-      const p = j?.predictions?.[0];
-      const b64 =
-        p?.bytesBase64Encoded ||
-        p?.image?.imageBytes ||
-        p?.image?.bytesBase64Encoded ||
-        p?.image?.base64 ||
-        j?.generatedImages?.[0]?.image?.imageBytes ||
-        j?.generatedImages?.[0]?.image?.bytesBase64Encoded ||
-        j?.generatedImages?.[0]?.image?.base64 ||
-        null;
-      if (b64) return res.status(200).json({ imageBase64: "data:image/png;base64," + b64 });
-      return res.status(502).json({ error: "Provider returned no image data" });
+    async function call(model) {
+      const r = await fetch("https://api-inference.huggingface.co/models/" + model, {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + TOKEN,
+          "Content-Type": "application/json",
+          Accept: "image/png"
+        },
+        body: JSON.stringify({ inputs: prompt })
+      });
+      if (!r.ok) return { ok: false, status: r.status, text: await r.text() };
+      const ab = await r.arrayBuffer();
+      return { ok: true, b64: Buffer.from(ab).toString("base64") };
     }
 
-    const url2 = "https://generativelanguage.googleapis.com/v1beta/models/imagegeneration:generate";
-    const r2 = await fetch(url2, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": API_KEY },
-      body: JSON.stringify({ prompt, size: "1024x1024" })
-    });
+    let out = await call("black-forest-labs/FLUX.1-schnell");
+    if (!out.ok && (out.status === 503 || out.status === 404 || out.status === 403))
+      out = await call("stabilityai/stable-diffusion-2-1");
 
-    if (r2.ok) {
-      const j = await r2.json();
-      const b64 =
-        j?.predictions?.[0]?.bytesBase64Encoded ||
-        j?.predictions?.[0]?.image?.base64 ||
-        j?.images?.[0]?.base64 ||
-        null;
-      if (b64) return res.status(200).json({ imageBase64: "data:image/png;base64," + b64 });
-      return res.status(502).json({ error: "Provider returned no image data (fallback)" });
-    }
-
-    const m1 = await r1.text().catch(() => "");
-    const m2 = await r2.text().catch(() => "");
-    return res.status(502).json({ error: `Primary ${r1.status} ${r1.statusText} – ${m1 || "Unknown"}. Fallback ${r2.status} ${r2.statusText} – ${m2 || "Unknown"}` });
+    if (!out.ok) return res.status(502).json({ error: out.text || "HF error" });
+    return res.status(200).json({ imageBase64: "data:image/png;base64," + out.b64 });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Unknown error" });
   }
