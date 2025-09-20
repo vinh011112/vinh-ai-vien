@@ -1,18 +1,11 @@
+// src/components/FeatureButton.tsx
+import React from "react";
 
-import React from 'react';
-
-interface FeatureButtonProps {
-  label: string;
-  onClick: () => void;
-}
-
-export const FeatureButton: React.FC<FeatureButtonProps> = ({ label, onClick }) => {
-  return (
-    <button
-      onClick={onClick}
-      className="bg-gray-800 text-gray-300 hover:bg-brand-dark hover:text-white transition-all duration-300 text-sm font-medium py-2 px-3 rounded-lg shadow-sm transform hover:-translate-y-0.5"
-    >
-      {label}
-    </button>
-  );
-};
+export const FeatureButton: React.FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white"
+  >
+    {label}
+  </button>
+);
