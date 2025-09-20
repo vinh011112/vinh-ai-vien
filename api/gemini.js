@@ -10,34 +10,58 @@ export default async function handler(req, res) {
       if (req.body) return req.body;
       const chunks = [];
       for await (const c of req) chunks.push(c);
-      return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+      const txt = Buffer.concat(chunks).toString("utf8");
+      return txt ? JSON.parse(txt) : {};
     })();
 
-    const prompt = body?.prompt || "A beautiful, high-quality photo of a tropical beach at sunset";
-    const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/imagegeneration:generate?key=" + API_KEY,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, size: "1024x1024", safetyFilterLevel: "block_most" })
-      }
-    );
+    const prompt = body?.prompt || "A high-quality photo of a tropical beach at sunset";
+    const url1 = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict";
+    const r1 = await fetch(url1, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": API_KEY },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: { sampleCount: 1 }
+      })
+    });
 
-    if (!r.ok) {
-      let msg = await r.text();
-      try { const j = JSON.parse(msg); msg = j?.error?.message || msg; } catch {}
-      return res.status(502).json({ error: r.status + " " + r.statusText + " – " + (msg || "Unknown error") });
+    if (r1.ok) {
+      const j = await r1.json();
+      const p = j?.predictions?.[0];
+      const b64 =
+        p?.bytesBase64Encoded ||
+        p?.image?.imageBytes ||
+        p?.image?.bytesBase64Encoded ||
+        p?.image?.base64 ||
+        j?.generatedImages?.[0]?.image?.imageBytes ||
+        j?.generatedImages?.[0]?.image?.bytesBase64Encoded ||
+        j?.generatedImages?.[0]?.image?.base64 ||
+        null;
+      if (b64) return res.status(200).json({ imageBase64: "data:image/png;base64," + b64 });
+      return res.status(502).json({ error: "Provider returned no image data" });
     }
 
-    const j = await r.json();
-    const b64 =
-      (j && j.predictions && j.predictions[0] && j.predictions[0].bytesBase64Encoded) ||
-      (j && j.predictions && j.predictions[0] && j.predictions[0].image && j.predictions[0].image.base64) ||
-      (j && j.images && j.images[0] && j.images[0].base64) ||
-      null;
+    const url2 = "https://generativelanguage.googleapis.com/v1beta/models/imagegeneration:generate";
+    const r2 = await fetch(url2, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": API_KEY },
+      body: JSON.stringify({ prompt, size: "1024x1024" })
+    });
 
-    if (!b64) return res.status(502).json({ error: "Provider returned no image data" });
-    return res.status(200).json({ imageBase64: "data:image/png;base64," + b64 });
+    if (r2.ok) {
+      const j = await r2.json();
+      const b64 =
+        j?.predictions?.[0]?.bytesBase64Encoded ||
+        j?.predictions?.[0]?.image?.base64 ||
+        j?.images?.[0]?.base64 ||
+        null;
+      if (b64) return res.status(200).json({ imageBase64: "data:image/png;base64," + b64 });
+      return res.status(502).json({ error: "Provider returned no image data (fallback)" });
+    }
+
+    const m1 = await r1.text().catch(() => "");
+    const m2 = await r2.text().catch(() => "");
+    return res.status(502).json({ error: `Primary ${r1.status} ${r1.statusText} – ${m1 || "Unknown"}. Fallback ${r2.status} ${r2.statusText} – ${m2 || "Unknown"}` });
   } catch (e) {
     return res.status(500).json({ error: e?.message || "Unknown error" });
   }
