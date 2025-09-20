@@ -1,5 +1,5 @@
 
 {
-  "name": "Trình chỉnh sửa Ảnh AI của Vinh",
-  "description": "Công cụ chỉnh sửa hình ảnh bằng AI đơn giản và hiệu quả được tạo bởi Vinh"
+  "name": "Trình chỉnh sửa Ảnh AI",
+  "description": "Một ứng dụng chỉnh sửa hình ảnh bằng AI đơn giản và hiệu quả, sử dụng mô hình Gemini Nano Banana để cung cấp các tính năng chỉnh sửa mạnh mẽ và sáng tạo."
 }
