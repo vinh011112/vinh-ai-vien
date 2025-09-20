@@ -17,6 +17,6 @@ export const CREATIVE = [
   "Mô hình 3D",
   "Phong cách Ghibli",
   "Thử trang phục",
-  "Mẫu cắm sản phẩm",
+  "Mẫu cầm sản phẩm",
   "Poster truyền thông",
 ];
